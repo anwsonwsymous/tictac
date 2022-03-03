@@ -7,18 +7,18 @@ fn get_input() -> String {
     buffer
 }
 
-fn translate_index(index: usize) -> (usize, usize) {
+fn translate_index(index: usize) -> Result<(usize, usize), &'static str> {
     match index {
-        1 => (0, 0),
-        2 => (0, 1),
-        3 => (0, 2),
-        4 => (1, 0),
-        5 => (1, 1),
-        6 => (1, 2),
-        7 => (2, 0),
-        8 => (2, 1),
-        9 => (2, 2),
-        _ => panic!("Index not found. allowed index from 1 to 9")
+        1 => Ok((0, 0)),
+        2 => Ok((0, 1)),
+        3 => Ok((0, 2)),
+        4 => Ok((1, 0)),
+        5 => Ok((1, 1)),
+        6 => Ok((1, 2)),
+        7 => Ok((2, 0)),
+        8 => Ok((2, 1)),
+        9 => Ok((2, 2)),
+        _ => Err("Index not found. allowed index from 1 to 9")
     }
 }
 
@@ -75,10 +75,9 @@ impl Game {
             println!("It's player {} turn", self.player);
             println!("{}", self.board);
 
-            let index = get_input().trim().parse::<usize>().unwrap();
-            let (y, x) = translate_index(index);
+            let index = get_input().trim().parse::<usize>().unwrap_or_default();
 
-            match self.board.select_coordinate(y, x, self.player.into()) {
+            match self.board.select_by_index(index, self.player.into()) {
                 Ok(_) => {
                     if self.board.is_full_filled() {
                         break GameResult::Draw;
@@ -115,17 +114,20 @@ struct Board {
 impl Board {
     fn new() -> Self {
         Board {
-            matrix: vec![
-                vec![EMPTY_SLOT; 3],
-                vec![EMPTY_SLOT; 3],
-                vec![EMPTY_SLOT; 3],
-            ]
+            matrix: vec![vec![EMPTY_SLOT; 3]; 3]
         }
     }
 
-    fn select_coordinate(&mut self, y: usize, x: usize, ch: char) -> Result<(), &str> {
+    fn select_by_index(&mut self, index: usize, ch: char) -> Result<(), &str> {
+        match translate_index(index) {
+            Ok((y, x)) => self.select_by_coordinate(y, x, ch),
+            _ => Err("Index out of bounds")
+        }
+    }
+
+    fn select_by_coordinate(&mut self, y: usize, x: usize, ch: char) -> Result<(), &str> {
         if !self.is_coordinate_available(y, x) {
-            return Err("This position checked. Select another one.");
+            return Err("This position is checked or out of bounds. Select another one.");
         }
 
         self.matrix[y][x] = ch;
