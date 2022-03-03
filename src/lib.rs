@@ -24,19 +24,19 @@ fn translate_index(index: usize) -> (usize, usize) {
 
 enum GameResult {
     Win(Player),
-    Draw
+    Draw,
 }
 
 impl fmt::Display for GameResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", match self {
-            GameResult::Draw=> "Draw!!!\n".to_string(),
+            GameResult::Draw => "Draw!!!\n".to_string(),
             GameResult::Win(player) => format!("{} Wins!!!\n", player)
         })
     }
 }
 
-#[derive(Clone,Copy,PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 enum Player {
     X,
     O,
@@ -44,10 +44,9 @@ enum Player {
 
 impl fmt::Display for Player {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", if matches!(self, Player::X) {
-            "X"
-        } else {
-            "O"
+        write!(f, "{}", match self {
+            Player::X => "X",
+            Player::O => "O"
         })
     }
 }
@@ -82,13 +81,13 @@ impl Game {
             match self.board.select_coordinate(y, x, self.player.into()) {
                 Ok(_) => {
                     if self.board.is_full_filled() {
-                        break GameResult::Draw
+                        break GameResult::Draw;
                     } else if self.board.check_winner(self.player.into()) {
-                        break GameResult::Win(self.player)
+                        break GameResult::Win(self.player);
                     } else {
                         self.player = if self.player == Player::X { Player::O } else { Player::X };
                     }
-                },
+                }
                 Err(error) => {
                     println!("{}", error);
                 }
@@ -107,6 +106,8 @@ impl Game {
     }
 }
 
+const EMPTY_SLOT: char = '-';
+
 struct Board {
     matrix: Vec<Vec<char>>
 }
@@ -115,14 +116,14 @@ impl Board {
     fn new() -> Self {
         Board {
             matrix: vec![
-                vec!['-', '-', '-'],
-                vec!['-', '-', '-'],
-                vec!['-', '-', '-'],
+                vec![EMPTY_SLOT; 3],
+                vec![EMPTY_SLOT; 3],
+                vec![EMPTY_SLOT; 3],
             ]
         }
     }
 
-    fn select_coordinate(&mut self, y: usize, x: usize, ch: char) -> Result<(), &str>{
+    fn select_coordinate(&mut self, y: usize, x: usize, ch: char) -> Result<(), &str> {
         if !self.is_coordinate_available(y, x) {
             return Err("This position checked. Select another one.");
         }
@@ -136,7 +137,7 @@ impl Board {
             Some(vec) => {
                 match vec.get(x) {
                     Some(res) => {
-                        *res == '-'
+                        *res == EMPTY_SLOT
                     }
                     _ => false
                 }
@@ -147,7 +148,7 @@ impl Board {
 
     fn is_full_filled(&self) -> bool {
         for row in &self.matrix {
-            if row.iter().any(|&x| x == '-') {
+            if row.iter().any(|&x| x == EMPTY_SLOT) {
                 return false;
             }
         }
@@ -177,13 +178,8 @@ impl Board {
     }
 
     fn check_diagonal(&self, winner_vec: &Vec<char>) -> bool {
-        if vec![self.matrix[0][0], self.matrix[1][1], self.matrix[2][2]] == *winner_vec {
-            return true;
-        }
-        if vec![self.matrix[0][2], self.matrix[1][1], self.matrix[2][0]] == *winner_vec {
-            return true;
-        }
-        false
+        vec![self.matrix[0][0], self.matrix[1][1], self.matrix[2][2]] == *winner_vec ||
+        vec![self.matrix[0][2], self.matrix[1][1], self.matrix[2][0]] == *winner_vec
     }
 }
 
